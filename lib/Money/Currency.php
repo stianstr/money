@@ -25,10 +25,10 @@ class Currency
     public function __construct($name)
     {
         if(!isset(static::$currencies)) {
-           static::$currencies = require __DIR__.'/currencies.php';
+           self::$currencies = require __DIR__.'/currencies.php';
         }
 
-        if (!array_key_exists($name, static::$currencies)) {
+        if (!array_key_exists($name, self::$currencies)) {
             throw new UnknownCurrencyException($name);
         }
         $this->name = $name;

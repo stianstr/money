@@ -25,6 +25,9 @@ class Money
     /** @var \Money\Currency */
     private $currency;
 
+	/** @var \Money\ExchangeProvider */
+	private $exchange;
+
     /**
      * Create a Money instance
      * @param  integer $amount    Amount, expressed in the smallest units of $currency (eg cents)
@@ -49,7 +52,7 @@ class Money
      */
     public static function __callStatic($method, $arguments)
     {
-        return new Money($arguments[0], new Currency($method));
+        return new static($arguments[0], new Currency($method));
     }
 
     /**
@@ -64,11 +67,13 @@ class Money
     /**
      * @throws \Money\InvalidArgumentException
      */
-    private function assertSameCurrency(Money $other)
+    private function exchangeOrAssertSameCurrency(Money $other)
     {
-        if (!$this->isSameCurrency($other)) {
-            throw new InvalidArgumentException('Different currencies');
-        }
+		if ($this->isSameCurrency($other))
+			return $other;
+		if (!$this->exchange)
+            throw new InvalidArgumentException('Different currencies, and no ExchangeProvider available');
+		return $this->exchange->exchange($other, $this->currency);
     }
 
     /**
@@ -88,7 +93,7 @@ class Money
      */
     public function compare(Money $other)
     {
-        $this->assertSameCurrency($other);
+        $other = $this->exchangeOrAssertSameCurrency($other);
         if ($this->amount < $other->amount) {
             return -1;
         } elseif ($this->amount == $other->amount) {
@@ -147,9 +152,9 @@ class Money
      */
     public function add(Money $addend)
     {
-        $this->assertSameCurrency($addend);
+        $addend = $this->exchangeOrAssertSameCurrency($addend);
 
-        return new self($this->amount + $addend->amount, $this->currency);
+        return new static($this->amount + $addend->amount, $this->currency);
     }
 
     /**
@@ -158,10 +163,14 @@ class Money
      */
     public function subtract(Money $subtrahend)
     {
-        $this->assertSameCurrency($subtrahend);
+        $subtrahend = $this->exchangeOrAssertSameCurrency($subtrahend);
 
-        return new self($this->amount - $subtrahend->amount, $this->currency);
+        return new static($this->amount - $subtrahend->amount, $this->currency);
     }
+
+	protected function setExchange(ExchangeProvider $exchange) {
+		$this->exchange = $exchange;
+	}
 
     /**
      * @throws \Money\InvalidArgumentException
@@ -195,7 +204,7 @@ class Money
 
         $product = (int) round($this->amount * $multiplier, 0, $rounding_mode);
 
-        return new Money($product, $this->currency);
+        return new static($product, $this->currency);
     }
 
     /**
@@ -210,7 +219,7 @@ class Money
 
         $quotient = (int) round($this->amount / $divisor, 0, $rounding_mode);
 
-        return new Money($quotient, $this->currency);
+        return new static($quotient, $this->currency);
     }
 
     /**
@@ -226,7 +235,7 @@ class Money
 
         foreach ($ratios as $ratio) {
             $share = (int) floor($this->amount * $ratio / $total);
-            $results[] = new Money($share, $this->currency);
+            $results[] = new static($share, $this->currency);
             $remainder -= $share;
         }
         for ($i = 0; $remainder > 0; $i++) {
