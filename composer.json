@@ -1,5 +1,5 @@
 {
-    "name": "mathiasverraes/money",
+    "name": "stianstr/money",
     "description": "PHP implementation of Fowler's Money pattern",
     "type": "library",
     "keywords": [ "Money", "Value Object", "Generic Sub-domain" ],
