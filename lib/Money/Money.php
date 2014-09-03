@@ -282,4 +282,12 @@ class Money
 
         return (int) $units;
     }
+
+	public function __toString() {
+		return sprintf('%s %s',
+			preg_replace('/\.00$/', '', number_format($this->amount/100, 2, '.', ' ')),
+			$this->currency
+		);
+	}
+
 }
