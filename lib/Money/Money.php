@@ -59,9 +59,30 @@ class Money
      * @param \Money\Money $other
      * @return bool
      */
-    public function isSameCurrency(Money $other)
+    public function isMoneySameCurrency(Money $other)
     {
         return $this->currency->equals($other->currency);
+    }
+
+    /**
+     * @param \Money\Currency $other
+     * @return bool
+     */
+    public function isSameCurrency(Currency $currency)
+    {
+        return $this->currency->equals($currency);
+    }
+
+    /**
+     * @throws \Money\InvalidArgumentException
+     */
+    public function exchange(Currency $currency)
+    {
+		if ($this->isSameCurrency($currency))
+			return $this;
+		if (!$this->exchange)
+            throw new InvalidArgumentException('Different currencies, and no ExchangeProvider available');
+		return $this->exchange->exchange($this, $currency);
     }
 
     /**
@@ -69,7 +90,7 @@ class Money
      */
     private function exchangeOrAssertSameCurrency(Money $other)
     {
-		if ($this->isSameCurrency($other))
+		if ($this->isMoneySameCurrency($other))
 			return $other;
 		if (!$this->exchange)
             throw new InvalidArgumentException('Different currencies, and no ExchangeProvider available');
@@ -83,7 +104,7 @@ class Money
     public function equals(Money $other)
     {
         return
-            $this->isSameCurrency($other)
+            $this->isMoneySameCurrency($other)
             && $this->amount == $other->amount;
     }
 
